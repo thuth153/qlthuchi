@@ -24,6 +24,26 @@ const StatCard = ({ title, value, subtext, icon: Icon, trend }) => (
     </div>
 );
 
+const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+        const data = payload[0].payload;
+        return (
+            <div style={{ background: 'var(--bg-secondary)', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
+                <p style={{ fontWeight: 700, marginBottom: '0.25rem', color: 'var(--text-primary)' }}>{data.symbol}</p>
+                <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span>Số lượng: <strong style={{ color: 'var(--text-primary)' }}>{data.quantity.toLocaleString()}</strong></span>
+                    <span>Giá: <strong style={{ color: 'var(--text-primary)' }}>{Math.round(data.currentPrice > 0 ? data.currentPrice : data.avgPrice).toLocaleString()} đ</strong></span>
+                    <div style={{ marginTop: '4px', borderTop: '1px solid var(--border-color)', paddingTop: '4px' }}>
+                        Giá trị: <strong style={{ color: 'var(--primary)' }}>{data.chartValue.toLocaleString()} đ</strong>
+                        <span style={{ marginLeft: '4px', fontSize: '0.75rem' }}>({data.allocation.toFixed(1)}%)</span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+    return null;
+};
+
 export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [summary, setSummary] = useState(null);
@@ -114,16 +134,13 @@ export default function Dashboard() {
                                     outerRadius={100}
                                     paddingAngle={5}
                                     dataKey="chartValue"
+                                    nameKey="symbol"
                                 >
                                     {holdings.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip
-                                    contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px' }}
-                                    itemStyle={{ color: 'var(--text-primary)' }}
-                                    formatter={(value) => value.toLocaleString() + ' đ'}
-                                />
+                                <Tooltip content={<CustomTooltip />} />
                             </PieChart>
                         </ResponsiveContainer>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center', marginTop: '1rem' }}>
