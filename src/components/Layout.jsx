@@ -16,7 +16,7 @@ export default function Layout({ children }) {
         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="menu-btn">
           {isSidebarOpen ? <X /> : <Menu />}
         </button>
-        <span className="logo-text">StockManager</span>
+        <span className="logo-text">Quản lý Thu Chi</span>
         <button onClick={toggleTheme} className="theme-toggle-btn" title="Chuyển theme">
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </button>

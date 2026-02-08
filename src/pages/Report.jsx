@@ -251,7 +251,7 @@ export default function Report() {
                     <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
 
                         {/* Left: Frequency Stats */}
-                        <div className="card" style={{ flex: '1', minWidth: '300px', padding: 0, overflow: 'hidden' }}>
+                        <div className="card" style={{ flex: '1', minWidth: '300px', padding: 0, overflowX: 'auto' }}>
                             <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', fontWeight: 600 }}>
                                 Cổ phiếu thường xuyên giao dịch
                             </div>
@@ -286,7 +286,7 @@ export default function Report() {
                         </div>
 
                         {/* Right: Detailed Log */}
-                        <div className="card" style={{ flex: '2', minWidth: '400px', padding: 0, overflow: 'hidden' }}>
+                        <div className="card" style={{ flex: '2', minWidth: '300px', padding: 0, overflowX: 'auto' }}>
                             <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', fontWeight: 600 }}>
                                 Giao dịch CP (Đã bán)
                             </div>

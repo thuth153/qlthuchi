@@ -268,31 +268,33 @@ export default function FuelManagement() {
 
                     <div className="card">
                         <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Lịch sử Đổ xăng</h3>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                                    <th style={{ padding: '0.75rem', width: '50px' }}>STT</th>
-                                    <th style={{ padding: '0.75rem' }}>Ngày</th>
-                                    <th style={{ padding: '0.75rem' }}>Xe</th>
-                                    <th style={{ padding: '0.75rem' }}>Số tiền</th>
-                                    <th style={{ padding: '0.75rem' }}>Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {logs.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((l, index) => (
-                                    <tr key={l.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                        <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{(currentPage - 1) * pageSize + index + 1}</td>
-                                        <td style={{ padding: '0.75rem' }}>{new Date(l.log_date).toLocaleDateString('vi-VN')}</td>
-                                        <td style={{ padding: '0.75rem' }}>{l.vehicles?.name}</td>
-                                        <td style={{ padding: '0.75rem', fontWeight: 600 }}>{l.amount.toLocaleString()} đ</td>
-                                        <td style={{ padding: '0.75rem' }}>
-                                            <button onClick={() => handleDeleteLog(l.id)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}><Trash2 size={16} /></button>
-                                        </td>
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '500px' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                                        <th style={{ padding: '0.75rem', width: '50px' }}>STT</th>
+                                        <th style={{ padding: '0.75rem' }}>Ngày</th>
+                                        <th style={{ padding: '0.75rem' }}>Xe</th>
+                                        <th style={{ padding: '0.75rem' }}>Số tiền</th>
+                                        <th style={{ padding: '0.75rem' }}>Thao tác</th>
                                     </tr>
-                                ))}
-                                {logs.length === 0 && <tr><td colSpan="5" style={{ padding: '1rem', textAlign: 'center' }}>Chưa có dữ liệu.</td></tr>}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {logs.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((l, index) => (
+                                        <tr key={l.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                            <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{(currentPage - 1) * pageSize + index + 1}</td>
+                                            <td style={{ padding: '0.75rem' }}>{new Date(l.log_date).toLocaleDateString('vi-VN')}</td>
+                                            <td style={{ padding: '0.75rem' }}>{l.vehicles?.name}</td>
+                                            <td style={{ padding: '0.75rem', fontWeight: 600 }}>{l.amount.toLocaleString()} đ</td>
+                                            <td style={{ padding: '0.75rem' }}>
+                                                <button onClick={() => handleDeleteLog(l.id)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {logs.length === 0 && <tr><td colSpan="5" style={{ padding: '1rem', textAlign: 'center' }}>Chưa có dữ liệu.</td></tr>}
+                                </tbody>
+                            </table>
+                        </div>
                         <Pagination
                             currentPage={currentPage}
                             totalItems={logs.length}
