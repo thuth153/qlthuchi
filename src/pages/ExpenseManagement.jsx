@@ -144,6 +144,7 @@ export default function ExpenseManagement() {
         if (!window.confirm('Bạn có chắc chắn muốn xóa?')) return;
         await supabase.from('expenses').delete().eq('id', id);
         fetchData();
+        setIsModalOpen(false);
     };
 
     const handleEdit = (item) => {
@@ -351,8 +352,8 @@ export default function ExpenseManagement() {
                             <th style={{ padding: '1rem', color: 'var(--text-secondary)', textAlign: 'center', width: '60px' }}>STT</th>
                             <th style={{ padding: '1rem', color: 'var(--text-secondary)', textAlign: 'left' }}>Ngày</th>
                             <th style={{ padding: '1rem', color: 'var(--text-secondary)', textAlign: 'left' }}>Loại</th>
-                            <th style={{ padding: '1rem', color: 'var(--text-secondary)', textAlign: 'left' }}>Danh mục</th>
                             <th style={{ padding: '1rem', color: 'var(--text-secondary)', textAlign: 'right' }}>Số tiền</th>
+                            <th style={{ padding: '1rem', color: 'var(--text-secondary)', textAlign: 'left' }}>Danh mục</th>
                             <th style={{ padding: '1rem', color: 'var(--text-secondary)', textAlign: 'left' }}>Ghi chú</th>
                             <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Thao tác</th>
                         </tr>
@@ -378,10 +379,18 @@ export default function ExpenseManagement() {
                                             {item.type === 'income' ? 'THU' : 'CHI'}
                                         </span>
                                     </td>
-                                    <td style={{ padding: '1rem' }}>{item.category?.name || 'Khác'}</td>
-                                    <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: item.type === 'income' ? 'var(--success)' : 'var(--danger)' }}>
+                                    <td
+                                        style={{
+                                            padding: '1rem', textAlign: 'right', fontWeight: 600,
+                                            color: item.type === 'income' ? 'var(--success)' : 'var(--danger)',
+                                            cursor: 'pointer', textDecoration: 'underline'
+                                        }}
+                                        onClick={() => handleEdit(item)}
+                                        title="Nhấn để xem chi tiết/sửa"
+                                    >
                                         {item.type === 'income' ? '+' : '-'}{parseFloat(item.amount).toLocaleString()} đ
                                     </td>
+                                    <td style={{ padding: '1rem' }}>{item.category?.name || 'Khác'}</td>
                                     <td style={{ padding: '1rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                         {item.note || '-'}
                                     </td>
@@ -497,6 +506,16 @@ export default function ExpenseManagement() {
                                     <button type="button" className="btn" onClick={() => setIsModalOpen(false)} style={{ background: 'var(--bg-secondary)' }}>
                                         Hủy
                                     </button>
+                                    {editingItem && (
+                                        <button
+                                            type="button"
+                                            className="btn"
+                                            onClick={() => handleDelete(editingItem.id)}
+                                            style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }}
+                                        >
+                                            <Trash2 size={16} /> Xóa
+                                        </button>
+                                    )}
                                     <button type="submit" className="btn btn-primary">
                                         {editingItem ? 'Cập nhật' : 'Thêm'}
                                     </button>

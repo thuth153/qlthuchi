@@ -22,7 +22,7 @@ function App() {
             <Route path="/report" element={<Report />} />
             <Route path="/fuel" element={<FuelManagement />} />
             <Route path="/expenses" element={<ExpenseManagement />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="/expenses" replace />} />
           </Route>
         </Routes>
       </Router>

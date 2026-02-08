@@ -17,11 +17,11 @@ export default function Sidebar() {
     };
 
     const navItems = [
-        { icon: LayoutDashboard, label: 'Tổng quan', path: '/dashboard' },
+        { icon: Wallet, label: 'Thu Chi', path: '/expenses' },
+        { icon: Fuel, label: 'Nhiên liệu', path: '/fuel' },
+        { icon: LayoutDashboard, label: 'Tổng quan CK', path: '/dashboard' },
         { icon: List, label: 'Giao dịch CK', path: '/transactions' },
         { icon: BarChart3, label: 'Báo cáo CK', path: '/report' },
-        { icon: Fuel, label: 'Nhiên liệu', path: '/fuel' },
-        { icon: Wallet, label: 'Thu Chi', path: '/expenses' },
     ];
 
     return (
@@ -50,7 +50,7 @@ export default function Sidebar() {
             >
                 <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', borderRadius: '12px' }}></div>
-                    <span style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.02em' }}>StockManager</span>
+                    <span style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.02em' }}>Quản lý Thu Chi</span>
                 </div>
 
                 <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

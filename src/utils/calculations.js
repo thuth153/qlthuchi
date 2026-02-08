@@ -108,10 +108,16 @@ export const calculatePortfolio = (transactions, currentPrices = {}) => {
         };
     }).filter(h => h.quantity > 0 || h.realizedPL !== 0); // Keep if holding or has P/L history
 
-    // Calculate Allocation %
+    // Calculate Allocation % using Chart Value (Market Value or Cost Basis)
+    let totalChartValue = 0;
     holdings.forEach(h => {
-        if (totalMarketValue > 0 && h.quantity > 0) {
-            h.allocation = (h.marketValue / totalMarketValue) * 100;
+        h.chartValue = h.marketValue > 0 ? h.marketValue : (h.quantity * h.avgPrice);
+        totalChartValue += h.chartValue;
+    });
+
+    holdings.forEach(h => {
+        if (totalChartValue > 0) {
+            h.allocation = (h.chartValue / totalChartValue) * 100;
         }
     });
 

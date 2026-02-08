@@ -107,13 +107,13 @@ export default function Dashboard() {
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
-                                    data={holdings.filter(h => h.marketValue > 0)}
+                                    data={holdings.filter(h => h.chartValue > 0)}
                                     cx="50%"
                                     cy="50%"
                                     innerRadius={60}
                                     outerRadius={100}
                                     paddingAngle={5}
-                                    dataKey="marketValue"
+                                    dataKey="chartValue"
                                 >
                                     {holdings.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -127,10 +127,10 @@ export default function Dashboard() {
                             </PieChart>
                         </ResponsiveContainer>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center', marginTop: '1rem' }}>
-                            {holdings.filter(h => h.marketValue > 0).map((h, i) => (
+                            {holdings.filter(h => h.chartValue > 0).map((h, i) => (
                                 <div key={h.symbol} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
                                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: COLORS[i % COLORS.length] }}></div>
-                                    {h.symbol} ({h.allocation.toFixed(1)}%)
+                                    {h.symbol}: {h.quantity.toLocaleString()} cp - Giá {Math.round(h.avgPrice).toLocaleString()} ({h.allocation.toFixed(1)}%)
                                 </div>
                             ))}
                         </div>
