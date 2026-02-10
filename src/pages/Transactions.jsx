@@ -131,7 +131,7 @@ export default function Transactions() {
 
             // Count how many prices were successfully fetched
             const successCount = Object.values(prices).filter(p => p > 0).length;
-            alert(`Đã cập nhật giá cho ${successCount}/${activeSymbols.length} mã chứng khoán từ TCBS!`);
+            alert(`Đã cập nhật giá cho ${successCount}/${activeSymbols.length} mã chứng khoán từ Internet!`);
         } catch (error) {
             console.error('Error refreshing prices:', error);
             alert('Có lỗi khi cập nhật giá. Vui lòng thử lại!');
