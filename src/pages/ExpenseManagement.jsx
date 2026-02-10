@@ -319,16 +319,7 @@ export default function ExpenseManagement() {
 
             {/* Filters */}
             <div className="card" style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '200px' }}>
-                    <Search size={18} color="var(--text-secondary)" />
-                    <input
-                        className="input-field"
-                        style={{ padding: '0.5rem' }}
-                        placeholder="Tìm kiếm theo ghi chú..."
-                        value={filterNote}
-                        onChange={e => setFilterNote(e.target.value)}
-                    />
-                </div>
+
                 <select className="input-field" style={{ width: 'auto', padding: '0.5rem' }} value={filterType} onChange={e => setFilterType(e.target.value)}>
                     <option value="all">Tất cả</option>
                     <option value="income">Thu</option>
@@ -354,6 +345,16 @@ export default function ExpenseManagement() {
                         <option key={y} value={y}>Năm {y}</option>
                     ))}
                 </select>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '200px' }}>
+                    <Search size={18} color="var(--text-secondary)" />
+                    <input
+                        className="input-field"
+                        style={{ padding: '0.5rem' }}
+                        placeholder="Tìm kiếm theo ghi chú..."
+                        value={filterNote}
+                        onChange={e => setFilterNote(e.target.value)}
+                    />
+                </div>
             </div>
 
             {/* Table */}
