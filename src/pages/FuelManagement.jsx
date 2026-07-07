@@ -5,6 +5,13 @@ import { Plus, Trash2, Fuel, Calendar, Car, BarChart3, Filter } from 'lucide-rea
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import Pagination from '../components/Pagination';
 
+const isFuelCategory = (name) => {
+    if (!name) return false;
+    const clean = name.normalize('NFC').toLowerCase().trim();
+    const cleanNFD = name.normalize('NFD').toLowerCase().trim();
+    return clean === 'xăng xe' || clean === 'nuôi xe' || cleanNFD === 'xăng xe' || cleanNFD === 'nuôi xe';
+};
+
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function FuelManagement() {
@@ -34,7 +41,7 @@ export default function FuelManagement() {
     }, []);
 
     const runSplitMigration = async (user) => {
-        const migrationKey = `migration_split_nuoixe_xangxe_${user.id}`;
+        const migrationKey = `migration_split_nuoixe_xangxe_v2_${user.id}`;
         const migrationDone = localStorage.getItem(migrationKey);
         if (migrationDone) return;
 
@@ -49,8 +56,16 @@ export default function FuelManagement() {
             if (!categories) return;
 
             // Find categories matching 'nuôi xe' or 'xăng xe' case-insensitively
-            const nuoiXeCat = categories.find(c => c.name.toLowerCase().trim() === 'nuôi xe');
-            let xangXeCat = categories.find(c => c.name.toLowerCase().trim() === 'xăng xe');
+            const nuoiXeCat = categories.find(c => {
+                const norm = c.name.normalize('NFC').toLowerCase().trim();
+                const normNFD = c.name.normalize('NFD').toLowerCase().trim();
+                return norm === 'nuôi xe' || normNFD === 'nuôi xe';
+            });
+            let xangXeCat = categories.find(c => {
+                const norm = c.name.normalize('NFC').toLowerCase().trim();
+                const normNFD = c.name.normalize('NFD').toLowerCase().trim();
+                return norm === 'xăng xe' || normNFD === 'xăng xe';
+            });
 
             if (!nuoiXeCat) {
                 localStorage.setItem(migrationKey, 'true');
@@ -175,10 +190,18 @@ export default function FuelManagement() {
             let existingCategory = null;
             if (categories && categories.length > 0) {
                 // Find "Xăng xe" (case-insensitive)
-                existingCategory = categories.find(c => c.name.toLowerCase().trim() === 'xăng xe');
+                existingCategory = categories.find(c => {
+                    const norm = c.name.normalize('NFC').toLowerCase().trim();
+                    const normNFD = c.name.normalize('NFD').toLowerCase().trim();
+                    return norm === 'xăng xe' || normNFD === 'xăng xe';
+                });
                 // If not found, find "Nuôi xe" (case-insensitive)
                 if (!existingCategory) {
-                    existingCategory = categories.find(c => c.name.toLowerCase().trim() === 'nuôi xe');
+                    existingCategory = categories.find(c => {
+                        const norm = c.name.normalize('NFC').toLowerCase().trim();
+                        const normNFD = c.name.normalize('NFD').toLowerCase().trim();
+                        return norm === 'nuôi xe' || normNFD === 'nuôi xe';
+                    });
                 }
             }
 

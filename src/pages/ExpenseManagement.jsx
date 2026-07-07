@@ -4,6 +4,13 @@ import { Plus, Trash2, Edit2, Search, TrendingUp, TrendingDown, Calendar, Dollar
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Pagination from '../components/Pagination';
 
+const isFuelCategory = (name) => {
+    if (!name) return false;
+    const clean = name.normalize('NFC').toLowerCase().trim();
+    const cleanNFD = name.normalize('NFD').toLowerCase().trim();
+    return clean === 'xăng xe' || clean === 'nuôi xe' || cleanNFD === 'xăng xe' || cleanNFD === 'nuôi xe';
+};
+
 export default function ExpenseManagement() {
     const [expenses, setExpenses] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -58,7 +65,7 @@ export default function ExpenseManagement() {
     }, []);
 
     const runSplitMigration = async (user) => {
-        const migrationKey = `migration_split_nuoixe_xangxe_${user.id}`;
+        const migrationKey = `migration_split_nuoixe_xangxe_v2_${user.id}`;
         const migrationDone = localStorage.getItem(migrationKey);
         if (migrationDone) return;
 
@@ -73,8 +80,16 @@ export default function ExpenseManagement() {
             if (!categories) return;
 
             // Find categories matching 'nuôi xe' or 'xăng xe' case-insensitively
-            const nuoiXeCat = categories.find(c => c.name.toLowerCase().trim() === 'nuôi xe');
-            let xangXeCat = categories.find(c => c.name.toLowerCase().trim() === 'xăng xe');
+            const nuoiXeCat = categories.find(c => {
+                const norm = c.name.normalize('NFC').toLowerCase().trim();
+                const normNFD = c.name.normalize('NFD').toLowerCase().trim();
+                return norm === 'nuôi xe' || normNFD === 'nuôi xe';
+            });
+            let xangXeCat = categories.find(c => {
+                const norm = c.name.normalize('NFC').toLowerCase().trim();
+                const normNFD = c.name.normalize('NFD').toLowerCase().trim();
+                return norm === 'xăng xe' || normNFD === 'xăng xe';
+            });
 
             if (!nuoiXeCat) {
                 localStorage.setItem(migrationKey, 'true');
@@ -173,7 +188,7 @@ export default function ExpenseManagement() {
         if (!user) return;
 
         const selectedCat = categories.find(c => c.id === formData.category_id);
-        const isXangXe = selectedCat && selectedCat.name.toLowerCase().trim() === 'xăng xe';
+        const isXangXe = selectedCat && isFuelCategory(selectedCat.name);
 
         const payload = {
             ...formData,
@@ -186,12 +201,16 @@ export default function ExpenseManagement() {
         } else {
             const { error: insertError } = await supabase.from('expenses').insert([payload]);
             if (!insertError && isXangXe && selectedVehicleId) {
-                await supabase.from('fuel_logs').insert([{
+                const { error: fuelError } = await supabase.from('fuel_logs').insert([{
                     user_id: user.id,
                     vehicle_id: selectedVehicleId,
                     amount: parseFloat(formData.amount),
                     log_date: formData.transaction_date
                 }]);
+                if (fuelError) {
+                    console.error("Error inserting fuel log:", fuelError);
+                    alert("Lỗi khi đồng bộ sang lịch sử đổ xăng: " + fuelError.message);
+                }
             }
         }
 
@@ -256,7 +275,7 @@ export default function ExpenseManagement() {
 
         // Set vehicle if it's fuel expense
         const selectedCat = categories.find(c => c.id === item.category_id);
-        const isXangXe = selectedCat && selectedCat.name.toLowerCase().trim() === 'xăng xe';
+        const isXangXe = selectedCat && isFuelCategory(selectedCat.name);
         if (isXangXe && item.note && item.note.startsWith('Đổ xăng - ')) {
             const vName = item.note.replace('Đổ xăng - ', '').trim();
             const foundVehicle = vehicles.find(v => v.name === vName);
@@ -608,7 +627,7 @@ export default function ExpenseManagement() {
                                 </div>
                                 {(() => {
                                     const selectedCat = categories.find(c => c.id === formData.category_id);
-                                    const isXangXe = selectedCat && selectedCat.name.toLowerCase().trim() === 'xăng xe';
+                                    const isXangXe = selectedCat && isFuelCategory(selectedCat.name);
                                     if (isXangXe) {
                                         return (
                                             <div style={{ marginBottom: '1rem' }}>
