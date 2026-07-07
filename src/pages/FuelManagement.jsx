@@ -33,10 +33,85 @@ export default function FuelManagement() {
         fetchData();
     }, []);
 
+    const runSplitMigration = async (user) => {
+        const migrationKey = `migration_split_nuoixe_xangxe_${user.id}`;
+        const migrationDone = localStorage.getItem(migrationKey);
+        if (migrationDone) return;
+
+        try {
+            // Fetch all expense categories for this user
+            const { data: categories } = await supabase
+                .from('expense_categories')
+                .select('id, name')
+                .eq('user_id', user.id)
+                .eq('type', 'expense');
+
+            if (!categories) return;
+
+            // Find categories matching 'nuôi xe' or 'xăng xe' case-insensitively
+            const nuoiXeCat = categories.find(c => c.name.toLowerCase().trim() === 'nuôi xe');
+            let xangXeCat = categories.find(c => c.name.toLowerCase().trim() === 'xăng xe');
+
+            if (!nuoiXeCat) {
+                localStorage.setItem(migrationKey, 'true');
+                return;
+            }
+
+            if (!xangXeCat) {
+                const { data: newCat, error: createError } = await supabase
+                    .from('expense_categories')
+                    .insert([{ user_id: user.id, name: 'Xăng xe', type: 'expense' }])
+                    .select()
+                    .single();
+                if (createError) {
+                    console.error('Error creating Xăng xe category for split:', createError);
+                    return;
+                }
+                xangXeCat = newCat;
+            }
+
+            // Fetch expenses under Nuôi xe
+            const { data: expensesToMigrate } = await supabase
+                .from('expenses')
+                .select('id, note')
+                .eq('user_id', user.id)
+                .eq('category_id', nuoiXeCat.id);
+
+            if (expensesToMigrate && expensesToMigrate.length > 0) {
+                const targets = expensesToMigrate.filter(exp => {
+                    if (!exp.note) return false;
+                    const norm = exp.note.toLowerCase();
+                    return norm.includes('đổ xăng') || norm.includes('do xang');
+                });
+
+                if (targets.length > 0) {
+                    const targetIds = targets.map(t => t.id);
+                    const { error: batchUpdateError } = await supabase
+                        .from('expenses')
+                        .update({ category_id: xangXeCat.id })
+                        .in('id', targetIds);
+
+                    if (batchUpdateError) {
+                        console.error('Error batch updating expenses:', batchUpdateError);
+                        return;
+                    }
+                }
+            }
+
+            localStorage.setItem(migrationKey, 'true');
+            console.log('Split migration Nuôi xe -> Xăng xe successful.');
+        } catch (error) {
+            console.error('Migration error:', error);
+        }
+    };
+
     const fetchData = async () => {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
+
+        // Run category split migration once
+        await runSplitMigration(user);
 
         // Fetch Vehicles
         const { data: vData } = await supabase.from('vehicles').select('*').order('created_at', { ascending: true });
@@ -90,14 +165,22 @@ export default function FuelManagement() {
 
         // 2. Auto-create expense entry in Thu Chi module
         try {
-            // Check if "Xăng xe" category exists
-            let { data: existingCategory } = await supabase
+            // Check if "Xăng xe" or "Nuôi xe" category exists
+            const { data: categories } = await supabase
                 .from('expense_categories')
-                .select('id')
+                .select('id, name')
                 .eq('user_id', user.id)
-                .eq('name', 'Xăng xe')
-                .eq('type', 'expense')
-                .single();
+                .eq('type', 'expense');
+
+            let existingCategory = null;
+            if (categories && categories.length > 0) {
+                // Find "Xăng xe" (case-insensitive)
+                existingCategory = categories.find(c => c.name.toLowerCase().trim() === 'xăng xe');
+                // If not found, find "Nuôi xe" (case-insensitive)
+                if (!existingCategory) {
+                    existingCategory = categories.find(c => c.name.toLowerCase().trim() === 'nuôi xe');
+                }
+            }
 
             // If not exists, create it
             if (!existingCategory) {

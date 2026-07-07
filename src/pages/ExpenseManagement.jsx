@@ -13,6 +13,8 @@ export default function ExpenseManagement() {
     const [isCategoryManageOpen, setIsCategoryManageOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [editingCategory, setEditingCategory] = useState(null);
+    const [vehicles, setVehicles] = useState([]);
+    const [selectedVehicleId, setSelectedVehicleId] = useState('');
 
     // Filters
     const [filterType, setFilterType] = useState('all'); // 'all', 'income', 'expense'
@@ -55,10 +57,85 @@ export default function ExpenseManagement() {
         fetchData();
     }, []);
 
+    const runSplitMigration = async (user) => {
+        const migrationKey = `migration_split_nuoixe_xangxe_${user.id}`;
+        const migrationDone = localStorage.getItem(migrationKey);
+        if (migrationDone) return;
+
+        try {
+            // Fetch all expense categories for this user
+            const { data: categories } = await supabase
+                .from('expense_categories')
+                .select('id, name')
+                .eq('user_id', user.id)
+                .eq('type', 'expense');
+
+            if (!categories) return;
+
+            // Find categories matching 'nuôi xe' or 'xăng xe' case-insensitively
+            const nuoiXeCat = categories.find(c => c.name.toLowerCase().trim() === 'nuôi xe');
+            let xangXeCat = categories.find(c => c.name.toLowerCase().trim() === 'xăng xe');
+
+            if (!nuoiXeCat) {
+                localStorage.setItem(migrationKey, 'true');
+                return;
+            }
+
+            if (!xangXeCat) {
+                const { data: newCat, error: createError } = await supabase
+                    .from('expense_categories')
+                    .insert([{ user_id: user.id, name: 'Xăng xe', type: 'expense' }])
+                    .select()
+                    .single();
+                if (createError) {
+                    console.error('Error creating Xăng xe category for split:', createError);
+                    return;
+                }
+                xangXeCat = newCat;
+            }
+
+            // Fetch expenses under Nuôi xe
+            const { data: expensesToMigrate } = await supabase
+                .from('expenses')
+                .select('id, note')
+                .eq('user_id', user.id)
+                .eq('category_id', nuoiXeCat.id);
+
+            if (expensesToMigrate && expensesToMigrate.length > 0) {
+                const targets = expensesToMigrate.filter(exp => {
+                    if (!exp.note) return false;
+                    const norm = exp.note.toLowerCase();
+                    return norm.includes('đổ xăng') || norm.includes('do xang');
+                });
+
+                if (targets.length > 0) {
+                    const targetIds = targets.map(t => t.id);
+                    const { error: batchUpdateError } = await supabase
+                        .from('expenses')
+                        .update({ category_id: xangXeCat.id })
+                        .in('id', targetIds);
+
+                    if (batchUpdateError) {
+                        console.error('Error batch updating expenses:', batchUpdateError);
+                        return;
+                    }
+                }
+            }
+
+            localStorage.setItem(migrationKey, 'true');
+            console.log('Split migration Nuôi xe -> Xăng xe successful.');
+        } catch (error) {
+            console.error('Migration error:', error);
+        }
+    };
+
     const fetchData = async () => {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
+
+        // Run split migration once
+        await runSplitMigration(user);
 
         // Fetch categories
         const { data: cats } = await supabase
@@ -68,6 +145,13 @@ export default function ExpenseManagement() {
             .order('name');
 
         setCategories(cats || []);
+
+        // Fetch vehicles
+        const { data: vData } = await supabase
+            .from('vehicles')
+            .select('*')
+            .order('created_at', { ascending: true });
+        setVehicles(vData || []);
 
         // Fetch expenses
         const { data: exps } = await supabase
@@ -88,6 +172,9 @@ export default function ExpenseManagement() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        const selectedCat = categories.find(c => c.id === formData.category_id);
+        const isXangXe = selectedCat && selectedCat.name.toLowerCase().trim() === 'xăng xe';
+
         const payload = {
             ...formData,
             amount: parseFloat(formData.amount),
@@ -97,7 +184,15 @@ export default function ExpenseManagement() {
         if (editingItem) {
             await supabase.from('expenses').update(payload).eq('id', editingItem.id);
         } else {
-            await supabase.from('expenses').insert([payload]);
+            const { error: insertError } = await supabase.from('expenses').insert([payload]);
+            if (!insertError && isXangXe && selectedVehicleId) {
+                await supabase.from('fuel_logs').insert([{
+                    user_id: user.id,
+                    vehicle_id: selectedVehicleId,
+                    amount: parseFloat(formData.amount),
+                    log_date: formData.transaction_date
+                }]);
+            }
         }
 
         setIsModalOpen(false);
@@ -108,6 +203,7 @@ export default function ExpenseManagement() {
             amount: '',
             note: ''
         });
+        setSelectedVehicleId('');
         setEditingItem(null);
         fetchData();
     };
@@ -157,6 +253,22 @@ export default function ExpenseManagement() {
             amount: item.amount,
             note: item.note || ''
         });
+
+        // Set vehicle if it's fuel expense
+        const selectedCat = categories.find(c => c.id === item.category_id);
+        const isXangXe = selectedCat && selectedCat.name.toLowerCase().trim() === 'xăng xe';
+        if (isXangXe && item.note && item.note.startsWith('Đổ xăng - ')) {
+            const vName = item.note.replace('Đổ xăng - ', '').trim();
+            const foundVehicle = vehicles.find(v => v.name === vName);
+            if (foundVehicle) {
+                setSelectedVehicleId(foundVehicle.id);
+            } else {
+                setSelectedVehicleId('');
+            }
+        } else {
+            setSelectedVehicleId('');
+        }
+
         setIsModalOpen(true);
     };
 
@@ -494,6 +606,37 @@ export default function ExpenseManagement() {
                                         ))}
                                     </select>
                                 </div>
+                                {(() => {
+                                    const selectedCat = categories.find(c => c.id === formData.category_id);
+                                    const isXangXe = selectedCat && selectedCat.name.toLowerCase().trim() === 'xăng xe';
+                                    if (isXangXe) {
+                                        return (
+                                            <div style={{ marginBottom: '1rem' }}>
+                                                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Chọn Xe</label>
+                                                <select
+                                                    className="input-field"
+                                                    value={selectedVehicleId}
+                                                    onChange={e => {
+                                                        const vId = e.target.value;
+                                                        setSelectedVehicleId(vId);
+                                                        const vehicle = vehicles.find(v => v.id === vId);
+                                                        if (vehicle) {
+                                                            setFormData({ ...formData, note: `Đổ xăng - ${vehicle.name}` });
+                                                        } else {
+                                                            setFormData({ ...formData, note: '' });
+                                                        }
+                                                    }}
+                                                >
+                                                    <option value="">-- Chọn xe --</option>
+                                                    {vehicles.map(v => (
+                                                        <option key={v.id} value={v.id}>{v.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
                                 <div style={{ marginBottom: '1rem' }}>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Số tiền</label>
                                     <input
