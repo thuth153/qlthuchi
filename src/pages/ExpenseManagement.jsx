@@ -258,6 +258,39 @@ export default function ExpenseManagement() {
 
     const handleDelete = async (id) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa?')) return;
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                // Fetch the expense to delete first
+                const { data: expToDelete } = await supabase
+                    .from('expenses')
+                    .select('*, category:expense_categories(name)')
+                    .eq('id', id)
+                    .single();
+
+                if (expToDelete) {
+                    const isXangXe = expToDelete.category && isFuelCategory(expToDelete.category.name);
+                    if (isXangXe && expToDelete.note && expToDelete.note.startsWith('Đổ xăng - ')) {
+                        const vehicleName = expToDelete.note.replace('Đổ xăng - ', '').trim();
+                        const foundVehicle = vehicles.find(v => v.name === vehicleName);
+                        if (foundVehicle) {
+                            // Delete the corresponding fuel log
+                            await supabase
+                                .from('fuel_logs')
+                                .delete()
+                                .eq('user_id', user.id)
+                                .eq('vehicle_id', foundVehicle.id)
+                                .eq('amount', expToDelete.amount)
+                                .eq('log_date', expToDelete.transaction_date);
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Error deleting linked fuel log:', err);
+        }
+
         await supabase.from('expenses').delete().eq('id', id);
         fetchData();
         setIsModalOpen(false);

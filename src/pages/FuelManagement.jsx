@@ -244,6 +244,37 @@ export default function FuelManagement() {
 
     const handleDeleteLog = async (id) => {
         if (!window.confirm('Xóa bản ghi này?')) return;
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                // Fetch the log first to get details
+                const { data: logToDelete } = await supabase
+                    .from('fuel_logs')
+                    .select('*, vehicles(name)')
+                    .eq('id', id)
+                    .single();
+
+                if (logToDelete) {
+                    const vehicleName = logToDelete.vehicles?.name;
+                    const logDate = logToDelete.log_date;
+                    const logAmount = logToDelete.amount;
+
+                    // Delete the corresponding expense entry
+                    const noteTarget = `Đổ xăng - ${vehicleName || 'Xe'}`;
+                    await supabase
+                        .from('expenses')
+                        .delete()
+                        .eq('user_id', user.id)
+                        .eq('transaction_date', logDate)
+                        .eq('amount', logAmount)
+                        .eq('note', noteTarget);
+                }
+            }
+        } catch (err) {
+            console.error('Error deleting linked expense:', err);
+        }
+
         await supabase.from('fuel_logs').delete().eq('id', id);
         fetchData();
     };
